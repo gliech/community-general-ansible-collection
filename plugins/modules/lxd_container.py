@@ -179,6 +179,21 @@ options:
         required: false
         aliases: [ cert_file ]
         type: path
+    server_cert:
+        description:
+          - The path of the server certificate file.
+        required: false
+        aliases: [ server_cert_file ]
+        type: path
+    check_hostname:
+        description:
+          - Whether to check the server's hostname as part of TLS verification.
+          - Setting this to C(false) disables hostname verification. Use with
+            caution.
+        required: false
+        aliases: [ server_check_hostname ]
+        default: true
+        type: bool
     trust_password:
         description:
           - The client trusted password.
@@ -473,6 +488,8 @@ class LXDContainerManagement(object):
         self.cert_file = self.module.params.get('client_cert')
         if self.cert_file is None:
             self.cert_file = '{0}/.config/lxc/client.crt'.format(os.environ['HOME'])
+        self.server_cert_file = self.module.params.get('server_cert')
+        self.server_check_hostname = self.module.params['check_hostname']
         self.debug = self.module._verbosity >= 4
 
         try:
@@ -488,6 +505,8 @@ class LXDContainerManagement(object):
         try:
             self.client = LXDClient(
                 self.url, key_file=self.key_file, cert_file=self.cert_file,
+                server_cert_file=self.server_cert_file,
+                server_check_hostname=self.server_check_hostname,
                 debug=self.debug
             )
         except LXDClientException as e:
@@ -854,6 +873,15 @@ def main():
             client_cert=dict(
                 type='path',
                 aliases=['cert_file'],
+            ),
+            server_cert=dict(
+                type='path',
+                aliases=['server_cert_file'],
+            ),
+            check_hostname=dict(
+                type='bool',
+                default=True,
+                aliases=['server_check_hostname'],
             ),
             trust_password=dict(type='str', no_log=True),
         ),
